@@ -38,3 +38,53 @@ $ conda env create -n freqbench -f environment.yaml
 $ conda activate freqbench
 ```
 
+Install the freqbench module.
+
+```
+$ python setup.py install
+```
+
+## Usage
+
+First, you must find out the input and output device IDs for your audio
+interface. You can run the following in your terminal.
+
+```
+$ python
+>>> import freqbench
+>>> freqbench.get_audio_devices()
+```
+
+This gives us all the audio input and output devices available on the system.
+The number assocated with each of them on the left hand side is the ID of the
+device.
+
+For instance, I get an output like this:
+
+```
+DevicesInfo(
+  input:
+    6: "Scarlett 2i2 USB: Audio (hw:2,0)"
+    7: "sysdefault"
+    12: "default"
+  output:
+    0: "HDA NVidia: HDMI 0 (hw:1,3)"
+    1: "HDA NVidia: HDMI 1 (hw:1,7)"
+    2: "HDA NVidia: HDMI 2 (hw:1,8)"
+    3: "HDA NVidia: HDMI 3 (hw:1,9)"
+    4: "HDA NVidia: HDMI 4 (hw:1,10)"
+    5: "HDA NVidia: HDMI 5 (hw:1,11)"
+    6: "Scarlett 2i2 USB: Audio (hw:2,0)"
+    7: "sysdefault"
+    8: "front"
+    9: "surround40"
+    10: "surround51"
+    11: "surround71"
+    12: "default"
+    13: "dmix"
+)
+```
+
+I want to use my Scarlett 2i2 interface, so I have to take note that the input
+device ID is 6 and the output device ID is 6. Depending on your setup, the input
+and output IDs may not be equal to each other.
