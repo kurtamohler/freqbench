@@ -20,7 +20,15 @@ class DevicesInfo():
         self.output = {}
 
     def __repr__(self):
-        return f'DevicesInfo(\n  input={self.input},\n  output={self.output})'
+        msg = 'DevicesInfo(\n'
+        msg += '  input:\n'
+        for device_id, device_name in self.input.items():
+            msg += f'    {device_id}: "{device_name}"\n'
+        msg += '  output:\n'
+        for device_id, device_name in self.output.items():
+            msg += f'    {device_id}: "{device_name}"\n'
+        msg += ')'
+        return msg
 
     def __str__(self):
         return repr(self)
