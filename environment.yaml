@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - numpy=1.19
+  - jupyter=1.0
+  - scipy=1.7
+  - pyaudio=0.2.11
+  - matplotlib=3.3
