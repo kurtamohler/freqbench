@@ -13,6 +13,19 @@ class Audio(pyaudio.PyAudio):
     def __del__(self):
         self.terminate()
 
+    def get_stream(self, input_device, output_device, frame_rate, buffer_size, callback):
+        return self.open(
+            input=True,
+            input_device_index=input_device,
+            output=True,
+            output_device_index=output_device,
+            rate=frame_rate,
+            frames_per_buffer=buffer_size,
+            stream_callback=callback,
+            format=pyaudio.paFloat32,
+            channels=1)
+
+
 # Holds IDs and names of audio devices
 class DevicesInfo():
     def __init__(self):
@@ -51,3 +64,16 @@ def get_audio_devices():
             devices.output[device_id] = device_name
 
     return devices
+
+def play_signal(signal, output_device, frame_rate):
+    p = Audio()
+    stream = p.open(
+        output=True,
+        output_device_index=output_device,
+        rate=frame_rate,
+        format=pyaudio.paFloat32,
+        channels=1)
+    stream.write(signal.tobytes())
+
+    stream.stop_stream()
+    stream.close()
