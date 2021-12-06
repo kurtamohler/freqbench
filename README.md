@@ -49,7 +49,7 @@ interface. You can run the following in your terminal.
 ```
 $ python
 >>> import freqbench
->>> freqbench.get_audio_devices()
+>>> freqbench.get_devices()
 ```
 
 This gives us all the audio input and output devices available on the system.
@@ -82,43 +82,41 @@ DevicesInfo(
 )
 ```
 
-In this example, we want to use the Scarlett 2i2 interface. We have to take
+In this example, I will use the Scarlett 2i2 interface. We have to take
 note that the input device ID is 6 and the output device ID is 6. Note that
 the input and output IDs may not always be equal to each other. It depends on
 your setup.
 
-Now we can go ahead and run a frequency response test:
+Now we can go ahead and generate a test signal:
 
 ```python
->>> input_device = 6
->>> output_device = 6
 >>> freq0 = 0
 >>> freq1 = 22_000
 >>> time = 10
 >>> frame_rate = 44_100
->>> input_signal, output_signal = freqbench.run_sweep_test(input_device, output_device, freq0, freq1, time, frame_rate)
+>>> input_signal = 0.1 * freqbench.signal.sweep(freq0, freq1, time, frame_rate)
 ```
 
 This generates an audio signal that sweeps through 0 Hz to 22 kHz over 10
-seconds, using a frame rate of 44.1 kHz. So this function call will take 10
-seconds to run. The signal is sent through the DUT, and the output is captured.
-The function returns two arrays. The first is the audio signal that we input
-into the DUT. The second is the signal that came out of the DUT.
+seconds, using a frame rate of 44.1 kHz. Notice that we've multiplied the
+signal by 0.1. `freqbench.signal.sweep` generates a signal at maximum volume,
+which is bound to cause some clipping, so it's important to decrease the
+volume by scaling it down.
 
-If you're curious about what these sound like, you can play them back and
-listen. You can either play them through a different device on your system, or
+If you're curious about what this sounds like, you can play it back and
+listen. You can either play it through a different device on your system or
 you can unplug the output of your audio interface from the DUT and attach it
 to a speaker.
 
 On my system, my computer's speakers are output device 12, "default" from the
-`get_audio_devices` printout above, so I will use that device. Note that if you
+`get_devices` printout above, so I will use that device. Note that if you
 do something similar, and your system's audio driver is not real-time, there
-will be some odd audio artifacts that vary each time you play it, like popping
-and short static bursts. These artifacts aren't actually part of the audio
-signals. If you play them through a real-time interface, you'll notice a lot
-better consistency.
+may be some odd audio artifacts that vary each time you play it, like popping
+and short static bursts. Or with some audio devices that are not real-time, it
+may not even seem like it's playing at all. These artifacts aren't actually
+part of the audio signals. If you play them through a real-time interface,
+you'll notice a lot better consistency.
 
 ```python
 >>> freqbench.play_signal(input_signal, 12, 44_100)
->>> freqbench.play_signal(output_signal, 12, 44_100)
 ```

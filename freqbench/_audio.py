@@ -1,6 +1,7 @@
-import pyaudio
+from ._utils import SuppressStderr
 
-from .utils import SuppressStderr
+import pyaudio
+import numpy as np
 
 # RAII wrapper for PyAudio
 # This properly terminates the PyAudio object when it goes out of scope, and it
@@ -25,7 +26,6 @@ class Audio(pyaudio.PyAudio):
             format=pyaudio.paFloat32,
             channels=1)
 
-
 # Holds IDs and names of audio devices
 class DevicesInfo():
     def __init__(self):
@@ -47,7 +47,7 @@ class DevicesInfo():
         return repr(self)
 
 # Get IDs and names of available audio devices
-def get_audio_devices():
+def get_devices():
     devices = DevicesInfo()
     p = Audio()
     info = p.get_host_api_info_by_index(0)
@@ -77,3 +77,47 @@ def play_signal(signal, output_device, frame_rate):
 
     stream.stop_stream()
     stream.close()
+
+def run(input_signal, frame_rate, input_device, output_device):
+    p = Audio()
+    buffer_size = 1024
+
+    # Signal buffers read from the output of the DUT
+    output_buffers = []
+
+    cur_frame = 0
+
+    # This function is called for each audio stream buffer
+    def callback(output_buffer, frame_count, time_info, status_flags):
+        nonlocal cur_frame
+        output_buffers.append(output_buffer)
+
+        if cur_frame >= input_signal.size:
+            flag = pyaudio.paComplete
+            input_buffer = np.zeros(frame_count).astype(np.float32).tobytes()
+        else:
+            flag = pyaudio.paContinue
+            input_buffer = input_signal[cur_frame : cur_frame + frame_count].tobytes()
+
+        cur_frame += frame_count
+
+        return (input_buffer, flag)
+
+    # TODO: Make an RAII wrapper for stream
+    stream = p.get_stream(
+        input_device,
+        output_device,
+        frame_rate,
+        buffer_size,
+        callback)
+
+    while stream.is_active():
+        pass
+
+    stream.stop_stream()
+    stream.close()
+
+    output_signal = np.concatenate(
+        [np.frombuffer(buffer, dtype=np.float32) for buffer in output_buffers])
+
+    return output_signal
