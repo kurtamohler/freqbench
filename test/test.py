@@ -180,7 +180,7 @@ class TestAudio(unittest.TestCase):
         time = 3
         frame_rate = 44_100
 
-        s_in = freqbench.signal.sweep(freq0, freq1, time, frame_rate)
+        s_in = 0.1 * freqbench.signal.sweep(freq0, freq1, time, frame_rate)
         s_out = freqbench.run(s_in, frame_rate, input_device, output_device)
 
         self.assertTrue((s_out != 0).any(), msg='output signal is blank')
