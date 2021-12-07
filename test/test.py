@@ -2,7 +2,7 @@ import freqbench
 import unittest
 import numpy as np
 from scipy import signal
-
+import os
 
 class TestSignal(unittest.TestCase):
     def test_sweep(self):
@@ -107,40 +107,94 @@ class TestAnalysis(unittest.TestCase):
         # be negative, since we removed those signals
         self.assertTrue((response[response_mid_idx+2000:] < -20).all())
 
-def get_virtual_device():
-    devices = freqbench.get_devices()
-    virtual_input = None
-    virtual_output = None
+LOOP_INPUT = None
+LOOP_INPUT_NAME = 'Loopback: PCM (hw:2,0)'
+LOOP_OUTPUT = None
+LOOP_OUTPUT_NAME = 'Loopback: PCM (hw:2,1)'
 
-    for device_id, device_name in devices.input.items():
-        if device_name == 'freqbench virtual device':
-            virtual_input = device_id
-            break
+def get_loopback_env_var(name):
+    var = os.environ.get(name)
+    if var is None:
+        return None
 
-    for device_id, device_name in devices.output.items():
-        if device_name == 'freqbench virtual device':
-            virtual_output = device_id
-            break
+    if not var.isdigit():
+        raise ValueError(
+            f'expected environment variable "{name}" to be an integer')
 
-    return virtual_input, virtual_output
+    return int(var)
 
-def is_virtual_device_available():
-    virtual_input, virtual_output = get_virtual_device()
-    return virtual_input is not None and virtual_output is not None
+def get_loopback_devices():
+    global LOOP_INPUT
+    global LOOP_OUTPUT
+
+    if LOOP_INPUT is None:
+        env_var = get_loopback_env_var('LOOPBACK_INPUT')
+        if env_var is not None:
+            LOOP_INPUT = env_var
+
+        else:
+            devices = freqbench.get_devices()
+            for device_id, device_name in devices.input.items():
+                if device_name == LOOP_INPUT_NAME:
+                    LOOP_INPUT = device_id
+                    break
+
+    if LOOP_OUTPUT is None:
+        env_var = get_loopback_env_var('LOOPBACK_OUTPUT')
+        if env_var is not None:
+            LOOP_OUTPUT = env_var
+        else:
+            devices = freqbench.get_devices()
+            for device_id, device_name in devices.output.items():
+                if device_name == LOOP_OUTPUT_NAME:
+                    LOOP_OUTPUT = device_id
+                    break
+
+    return LOOP_INPUT, LOOP_OUTPUT
+
+def are_loopback_devices_available():
+    loopback_input, loopback_output = get_loopback_devices()
+    return loopback_input is not None and loopback_output is not None
 
 class TestAudio(unittest.TestCase):
-    virtual_device_unavailable_msg = (
-        '"freqbench virtual device" is not available. In order to run this test, '
-        'please create a virtual audio device called "freqbench virtual device" '
-        'which pipes its input into its output. The procedure to create such a '
-        'device is different for different systems. If you use ALSA audio, you '
-        'can follow these instructions: '
-        'https://www.alsa-project.org/main/index.php/Matrix:Module-dummy')
+    loopback_devices_unavailable_msg = (
+        f'Either loopback input device "{LOOP_INPUT_NAME}", output device '
+        f'"{LOOP_OUTPUT_NAME}", or both were not found. This is either because '
+        'you have not enabled them or because they have different names than '
+        'expected. Check the output of `freqbench.get_devices()`. If you see '
+        'loopback devices, you can specify their ID numbers with the '
+        'LOOPBACK_INPUT and LOOPBACK_OUTPUT environment variables. If you do '
+        'not see loopback devices, you will have to enable them on your system. '
+        'On most Linux distros, you can enable loopback devices by running '
+        '`$ modprobe snd-aloop` and then make sure to bring it to maximum '
+        'volume with `$ alsamixer`. If the "snd-aloop" module is not available '
+        'or not working properly, follow these instructions: '
+        'https://www.alsa-project.org/wiki/Matrix:Module-aloop')
 
-    @unittest.skipIf(not is_virtual_device_available(), virtual_device_unavailable_msg)
-    @unittest.skipIf(True, 'This test is not implemented yet')
-    def test_run_virtual(self):
-        virtual_input, virtual_output = get_virtual_device()
+    @unittest.skipIf(not are_loopback_devices_available(), loopback_devices_unavailable_msg)
+    def test_run_loopback(self):
+        input_device, output_device = get_loopback_devices()
+
+        freq0 = 20
+        freq1 = 22_000
+        time = 3
+        frame_rate = 44_100
+
+        s_in = freqbench.signal.sweep(freq0, freq1, time, frame_rate)
+        s_out = freqbench.run(s_in, frame_rate, input_device, output_device)
+
+        self.assertTrue((s_out != 0).any(), msg='output signal is blank')
+
+        # TODO: Fix freqbench.run() to capture the correct window so we don't
+        # have to shift s_out like this
+        s_out_start = np.argmax(s_out != 0)
+        self.assertTrue(s_out_start < 10000, msg='output signal lags too much')
+
+        s_out = s_out[s_out_start:]
+        s_out_check = s_in[:s_out.size]
+
+        self.assertTrue((s_out == s_out_check).all())
+
 
 class TestMain(unittest.TestCase):
     pass
