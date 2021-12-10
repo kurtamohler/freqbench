@@ -1,4 +1,4 @@
-from ._utils import SuppressStderr
+from .utils import SuppressStderr
 
 import pyaudio
 import numpy as np

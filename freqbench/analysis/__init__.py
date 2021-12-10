@@ -1,1 +1,3 @@
-from ._analysis import freqresp, smooth
+from .analysis import freqresp, smooth
+
+del analysis

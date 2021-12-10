@@ -1,1 +1,3 @@
-from ._signal import sweep, time
+from .signal import sweep, time
+
+del signal
