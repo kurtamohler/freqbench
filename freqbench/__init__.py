@@ -1,4 +1,5 @@
 from ._audio import get_devices, run, play_signal
+from ._serialization import save, load
 import freqbench.signal
 import freqbench.analysis
 

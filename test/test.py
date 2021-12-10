@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 from scipy import signal
 import os
+import tempfile
 
 class TestSignal(unittest.TestCase):
     def test_sweep(self):
@@ -195,6 +196,19 @@ class TestAudio(unittest.TestCase):
 
         self.assertTrue((s_out == s_out_check).all())
 
+class TestSerialization(unittest.TestCase):
+    def test_save_load(self):
+        fr0 = 44_100
+        s0 = 0.1 * freqbench.signal.sweep(20, 22_000, 3, fr0)
+
+        f = tempfile.TemporaryFile()
+
+        freqbench.save(s0, fr0, f)
+
+        fr1, s1 = freqbench.load(f)
+
+        self.assertEqual(fr0, fr1)
+        self.assertTrue((s0 == s1).all())
 
 class TestMain(unittest.TestCase):
     pass
