@@ -201,11 +201,9 @@ class TestSerialization(unittest.TestCase):
         fr0 = 44_100
         s0 = 0.1 * freqbench.signal.sweep(20, 22_000, 3, fr0)
 
-        f = tempfile.TemporaryFile()
-
-        freqbench.save(s0, fr0, f)
-
-        fr1, s1 = freqbench.load(f)
+        with tempfile.TemporaryFile() as f:
+            freqbench.save(s0, fr0, f)
+            fr1, s1 = freqbench.load(f)
 
         self.assertEqual(fr0, fr1)
         self.assertTrue((s0 == s1).all())
