@@ -4,4 +4,5 @@ def save(signal, frame_rate, filename):
     write(filename, frame_rate, signal)
 
 def load(filename):
-    return read(filename)
+    frame_rate, signal = read(filename)
+    return signal, frame_rate

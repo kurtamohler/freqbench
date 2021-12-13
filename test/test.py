@@ -203,7 +203,7 @@ class TestSerialization(unittest.TestCase):
 
         with tempfile.TemporaryFile() as f:
             freqbench.save(s0, fr0, f)
-            fr1, s1 = freqbench.load(f)
+            s1, fr1 = freqbench.load(f)
 
         self.assertEqual(fr0, fr1)
         self.assertTrue((s0 == s1).all())
